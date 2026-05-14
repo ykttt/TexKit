@@ -3,7 +3,7 @@
 %% Compact inline report metadata header for LuaLaTeX / LuaTeX-ja.
 %% Metadata is printed at the top of the first page, not on a separate title page.
 %% All metadata fields are hidden by default and are printed only when filled.
-%% Filled metadata fields are arranged in two compact columns.
+%% Filled metadata fields are arranged sequentially in two compact columns.
 %%
 %% Author: ykttt
 %% Contact: https://github.com/ykttt
@@ -42,8 +42,6 @@
 \RequirePackage{fontspec}
 \RequirePackage{luatexja-fontspec}
 \RequirePackage{unicode-math}
-
-% No explicit font is specified here. LuaTeX-ja/TeX Live defaults are used.
 
 % ----------------
 % Layout and spacing
@@ -116,8 +114,6 @@
 % Compact inline title block helpers
 % ----------------
 \newif\ifGRI@hasheader
-\newif\ifGRI@hasleftmetadata
-\newif\ifGRI@hasrightmetadata
 \newif\ifGRI@hasmetadata
 
 \newcommand{\GRI@checkheader}{%
@@ -128,57 +124,77 @@
 }
 
 \newcommand{\GRI@checkmetadata}{%
-  \GRI@hasleftmetadatafalse
-  \GRI@hasrightmetadatafalse
   \GRI@hasmetadatafalse
-  \ifdefempty{\Institution}{}{\GRI@hasleftmetadatatrue\GRI@hasmetadatatrue}%
-  \ifdefempty{\StudentName}{}{\GRI@hasleftmetadatatrue\GRI@hasmetadatatrue}%
-  \ifdefempty{\StudentID}{}{\GRI@hasleftmetadatatrue\GRI@hasmetadatatrue}%
-  \ifdefempty{\ExperimentDate}{}{\GRI@hasrightmetadatatrue\GRI@hasmetadatatrue}%
-  \ifdefempty{\SubmissionDate}{}{\GRI@hasrightmetadatatrue\GRI@hasmetadatatrue}%
-  \ifdefempty{\Collaborators}{}{\GRI@hasrightmetadatatrue\GRI@hasmetadatatrue}%
+  \ifdefempty{\Institution}{}{\GRI@hasmetadatatrue}%
+  \ifdefempty{\StudentName}{}{\GRI@hasmetadatatrue}%
+  \ifdefempty{\StudentID}{}{\GRI@hasmetadatatrue}%
+  \ifdefempty{\ExperimentDate}{}{\GRI@hasmetadatatrue}%
+  \ifdefempty{\SubmissionDate}{}{\GRI@hasmetadatatrue}%
+  \ifdefempty{\Collaborators}{}{\GRI@hasmetadatatrue}%
 }
 
-% Print a compact metadata line only when the value is nonempty.
-\newcommand{\GRI@metaline}[2]{%
-  \ifdefempty{#2}{}{\textbf{#1}：#2\par}%
+\newcounter{GRI@metacount}
+\newcommand{\GRI@metabody}{}
+
+% Add a metadata item only when the value is nonempty. Items are packed in
+% reading order: left -> right, then top -> bottom.
+\newcommand{\GRI@addmetaitem}[2]{%
+  \ifdefempty{#2}{}{%
+    \ifodd\value{GRI@metacount}%
+      \gappto\GRI@metabody{& \textbf{#1}：#2}%
+    \else
+      \ifnum\value{GRI@metacount}>0 \gappto\GRI@metabody{\tabularnewline} \fi
+      \gappto\GRI@metabody{\textbf{#1}：#2}%
+    \fi
+    \stepcounter{GRI@metacount}%
+  }%
+}
+
+\newcommand{\GRI@buildmetabody}{%
+  \setcounter{GRI@metacount}{0}%
+  \gdef\GRI@metabody{}%
+  \GRI@addmetaitem{所属}{\Institution}%
+  \GRI@addmetaitem{名前}{\StudentName}%
+  \GRI@addmetaitem{学籍番号}{\StudentID}%
+  \GRI@addmetaitem{実験日}{\ExperimentDate}%
+  \GRI@addmetaitem{提出日}{\SubmissionDate}%
+  \GRI@addmetaitem{共同実験者}{\Collaborators}%
+  \ifodd\value{GRI@metacount}\gappto\GRI@metabody{&}\fi
 }
 
 % Compact first-page title block. If every field is empty, this command prints
-% nothing and does not consume vertical space. Metadata is kept in two columns.
+% nothing and does not consume vertical space. Metadata is packed sequentially
+% into two columns without reserving fixed positions for particular fields.
 \newcommand{\makereporttitle}{%
   \begingroup
-    \GRI@checkheader
-    \GRI@checkmetadata
-    \setlength{\parindent}{0pt}%
-    \ifGRI@hasheader
-      \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}X>{\raggedleft\arraybackslash}p{.36\linewidth}@{}}
-        \ifdefempty{\@title}{}{{\Large\bfseries \@title}} &
-        \ifdefempty{\ReportType}{}{{\normalsize\bfseries \ReportType}}\\[-1pt]
-        \ifdefempty{\ReportNumber}{}{{\small \ReportNumber}} & \\
-      \end{tabularx}%
-      \vspace{1.5mm}\hrule\vspace{1.5mm}%
-    \fi
-    \ifGRI@hasmetadata
-      \small
-      \noindent
-      \begin{minipage}[t]{.49\linewidth}
-        \raggedright
-        \GRI@metaline{所属}{\Institution}%
-        \GRI@metaline{名前}{\StudentName}%
-        \GRI@metaline{学籍番号}{\StudentID}%
-      \end{minipage}%
-      \hfill
-      \begin{minipage}[t]{.49\linewidth}
-        \raggedright
-        \GRI@metaline{実験日}{\ExperimentDate}%
-        \GRI@metaline{提出日}{\SubmissionDate}%
-        \GRI@metaline{共同実験者}{\Collaborators}%
-      \end{minipage}\par
-      \vspace{1.5mm}\hrule\vspace{4mm}%
-    \else
-      \ifGRI@hasheader\vspace{2.5mm}\fi
-    \fi
+  \GRI@checkheader
+  \GRI@checkmetadata
+  \setlength{\parindent}{0pt}%
+  \ifGRI@hasheader
+    \noindent
+    \begin{minipage}[t]{.62\linewidth}
+      \raggedright
+      \ifdefempty{\@title}{}{{\Large\bfseries \@title\par}}%
+      \ifdefempty{\ReportNumber}{}{{\small \ReportNumber\par}}%
+    \end{minipage}%
+    \hfill
+    \begin{minipage}[t]{.34\linewidth}
+      \raggedleft
+      \ifdefempty{\ReportType}{}{{\normalsize\bfseries \ReportType\par}}%
+    \end{minipage}\par
+    \vspace{1.5mm}\hrule\vspace{1.5mm}%
+  \fi
+  \ifGRI@hasmetadata
+    \small
+    \GRI@buildmetabody
+    \noindent
+    \begin{tabular}{@{}p{.49\linewidth}p{.49\linewidth}@{}}
+      \GRI@metabody
+    \end{tabular}\par
+    \vspace{1.5mm}\hrule\vspace{4mm}%
+  \else
+    \ifGRI@hasheader\vspace{2.5mm}\fi
+  \fi
   \endgroup
 }
 
