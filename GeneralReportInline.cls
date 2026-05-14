@@ -10,7 +10,7 @@
 %%
 %% A4 paper, 22 mm margins, 11 pt text.
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{GeneralReport}[2026/05/14 General LuaLaTeX report class]
+\ProvidesClass{GeneralReportInline}[2026/05/14 General LuaLaTeX report class]
 \LoadClass[11pt,a4paper]{ltjsarticle}
 \RequirePackage{geometry}
 \geometry{a4paper,margin=22mm}
